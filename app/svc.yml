@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2025-12-04T14:00:19Z"
+  labels:
+    app: myapp
+  name: myapp-svc
+  namespace: myapp
+  resourceVersion: "16742"
+  uid: 915d8264-024c-405b-8f19-dae2404479de
+spec:
+  clusterIP: 10.100.74.26
+  clusterIPs:
+  - 10.100.74.26
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 8000
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app: myapp
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
