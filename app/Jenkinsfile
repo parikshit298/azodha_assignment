@@ -1,56 +1,35 @@
 pipeline {
   agent any
-
   environment {
-    APP_NAME    = "myapp"
     DOCKER_REPO = "parikshit298/azodha"
-    AWS_REGION  = "ap-south-1"
   }
-
   stages {
-
     stage('Checkout') {
       steps {
-        checkout scm
-        script {
-          env.GIT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-          env.IMAGE   = "${DOCKER_REPO}:${GIT_SHA}"
-        }
+        git url: 'https://github.com/parikshit298/azodha.git'
       }
     }
-
-    stage('Build & Test') {
+    stage('Build') {
       steps {
-        sh 'pip install -r requirements.txt || true'
-        sh 'pytest || true'
+        sh 'docker build -t ${DOCKER_REPO}:latest .'
       }
     }
-
-    stage('Build Docker') {
-      steps {
-        sh "docker build -t ${IMAGE} ."
-        sh "docker tag ${IMAGE} ${DOCKER_REPO}:latest"
-      }
-    }
-
-    stage('Push to Docker Hub') {
+    stage('Push') {
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
           sh '''
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
-            docker push ${IMAGE}
             docker push ${DOCKER_REPO}:latest
           '''
         }
       }
     }
-
-    stage('Deploy to Kubernetes') {
+    stage('Deploy') {
       steps {
         withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
           sh '''
             export KUBECONFIG=${KUBECONFIG_FILE}
-            kubectl set image deployment/myapp myapp=${IMAGE} --record
+            kubectl set image deployment/myapp myapp=${DOCKER_REPO}:latest --record
             kubectl rollout status deployment/myapp
           '''
         }
